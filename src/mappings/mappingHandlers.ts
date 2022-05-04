@@ -87,16 +87,6 @@ export type AvalancheEvent<T extends AvalancheResult = AvalancheResult> = {
   args?: T;
 };
 
-// TODO: same for this interface
-export interface BlockWrapper {
-  getBlock: () => AvalancheBlock;
-  getBlockHeight: () => number;
-  getHash: () => string;
-  getCalls?: (filters?: any) => AvalancheTransaction[];
-  getEvents: () => AvalancheEvent[];
-  getVersion: () => number;
-}
-
 type TransferEventArgs = [string, string, BigNumber] & {
   from: string;
   to: string;
