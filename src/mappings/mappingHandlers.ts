@@ -10,23 +10,6 @@ import {
 import { BigNumber } from "ethers";
 import assert from "assert";
 
-export interface Entity {
-  id: string;
-}
-
-export type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
-
-export interface Store {
-  get(entity: string, id: string): Promise<Entity | null>;
-  getByField(entity: string, field: string, value): Promise<Entity[]>;
-  getOneByField(entity: string, field: string, value): Promise<Entity | null>;
-  set(entity: string, id: string, data: Entity): Promise<void>;
-  bulkCreate(entity: string, data: Entity[]): Promise<void>;
-  remove(entity: string, id: string): Promise<void>;
-}
-
 // TODO: those 3 types are duplicate from subql/types
 // We have to find a way to import them from our version of the package
 export interface AvalancheResult extends ReadonlyArray<any> {
