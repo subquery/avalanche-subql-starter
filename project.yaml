@@ -38,8 +38,6 @@ dataSources:
     mapping:
       file: "./dist/index.js"
       handlers:
-        - handler: handleBlock
-          kind: avalanche/BlockHandler
         - handler: handleEvmEventTransfer
           kind: avalanche/EventHandler
           filter:
