@@ -7,7 +7,7 @@ import {
   AvalancheEventEntity,
   AvalancheTransactionEntity,
 } from "../types";
-import { AvalancheBlock, AvalancheEvent, AvalancheTransaction } from '@subql/types-avalanche'
+import { AvalancheBlockWrapper, AvalancheEvent, AvalancheTransaction } from '@subql/types-avalanche'
 import { BigNumber } from "ethers";
 import assert from "assert";
 
@@ -46,7 +46,8 @@ export async function handleEvmCallApprove(
   await approve.save();
 }
 
-export async function handleBlock(block: AvalancheBlock): Promise<void> {
+export async function handleBlock(blockWrapper: AvalancheBlockWrapper): Promise<void> {
+  const block = blockWrapper.block;
   const blockRecord = new AvalancheBlockEntity(block.hash);
 
   blockRecord.difficulty = block.difficulty;
