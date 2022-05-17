@@ -7,7 +7,7 @@ import {
 } from "../types";
 import {
   AvalancheBlockWrapper,
-  AvalancheEvent,
+  AvalancheLog,
   AvalancheTransaction,
 } from "@subql/types-avalanche";
 
@@ -63,7 +63,7 @@ export async function handleTransaction(
   await transactionRecord.save();
 }
 
-export async function handleLog(event: AvalancheEvent): Promise<void> {
+export async function handleLog(event: AvalancheLog): Promise<void> {
   const eventRecord = new AvalancheEventEntity(
     `${event.blockHash}-${event.logIndex}`
   );
