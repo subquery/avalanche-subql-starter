@@ -30,6 +30,9 @@
     "@subql/cli": "latest",
     "@subql/types": "latest",
     "@subql/types-avalanche": "dev",
+    "@graphprotocol/graph-cli": "^0.20.0",
+    "mustache": "^4.1.0",
+    "@graphprotocol/graph-ts": "^0.20.0",
     "typescript": "4.5.5"
   }
 }

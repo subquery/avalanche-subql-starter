@@ -1,82 +1,34 @@
-type AvalancheBlockEntity @entity {
+type Campaign @entity {
   id: ID!
-  baseFeePerGas: BigInt
-  blockExtraData: String
-  blockGasCost: BigInt
-  difficulty: BigInt
-  extDataGasUsed: String
-  extDataHash: String
-  gasLimit: BigInt
-  gasUsed: BigInt
-  hash: String! @index(unique:true)
-  logsBloom: String
-  miner: String
-  mixHash: String
-  nonce: String
-  number: Int! @index(unique:true)
-  parentHash: String
-  receiptsRoot: String
-  sha3Uncles: String
-  size: BigInt
-  stateRoot: String
-  timestamp: BigInt
-  totalDifficulty: BigInt
-  transactionsRoot: String
-  uncles: [String]
+  campaigner: Bytes! # address
+  ambusher: Bytes! # address
+  isClaimedCampaigner: Boolean!
+  isClaimedAmbusher: Boolean!
+  rewardHonCampaigner: BigInt!
+  rewardHrmCampaigner: BigInt!
+  rewardHonAmbusher: BigInt!
+  rewardHrmAmbusher: BigInt!
+  tier: BigInt!
+  area: BigInt!
+  totalAttack: BigInt!
+  totalDefense: BigInt!
+  startTimestamp: BigInt!
+  reinforceTimestamps: [BigInt!]!
+  tokens: [HeroCampaign!]! @derivedFrom(field: "campaign")
 }
 
-type AvalancheTransactionEntity @entity {
+type Hero @entity {
   id: ID!
-  block: AvalancheBlockEntity!
-  blockHash: String!
-  blockNumber: Int! 
-  from: String
-  gas: BigInt
-  gasPrice: BigInt
-  hash: String
-  input: String
-  nonce: BigInt
-  to: String
-  transactionIndex: BigInt!
-  value: BigInt
-  type: String
-  v: BigInt
-  r: String
-  s: String
-  accessList: [String]
-  chainId: String
-  maxFeePerGas: BigInt
-  maxPriorityFeePerGas: BigInt
+  level: BigInt!
+  attack: BigInt!
+  defense: BigInt!
+  endurance: BigInt!
+  campaigns: [HeroCampaign!]! @derivedFrom(field: "hero")
 }
 
-type AvalancheLogEntity @entity {
+type HeroCampaign @entity {
   id: ID!
-  block: AvalancheBlockEntity!
-  address: String
-  topics: [String]
-  data: String
-  blockNumber: Int!
-  transactionHash: String
-  transactionIndex: Int
-  blockHash: String! 
-  logIndex: Int!
-  removed: Boolean
-}
-
-type AvalancheReceiptEntity @entity {
-  id: ID!
-  block: AvalancheBlockEntity!
-  blockHash: String!
-  blockNumber: Int!
-  contractAddress: String
-  cumulativeGasUsed: BigInt
-  effectiveGasPrice: BigInt
-  from: String
-  gasUsed: BigInt
-  logsBloom: String
-  status: Boolean
-  to: String
-  transactionHash: String
-  transactionIndex: Int!
-  type: String
+  campaign: Campaign!
+  hero: Hero!
+  isAmbusher: Boolean!
 }
