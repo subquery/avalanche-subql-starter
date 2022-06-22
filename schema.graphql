@@ -1,7 +1,7 @@
 type Campaign @entity {
   id: ID!
-  campaigner: Bytes! # address
-  ambusher: Bytes! # address
+  campaigner: String! # address
+  ambusher: String! # address
   isClaimedCampaigner: Boolean!
   isClaimedAmbusher: Boolean!
   rewardHonCampaigner: BigInt!

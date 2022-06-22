@@ -36,4 +36,24 @@ dataSources:
           kind: avalanche/LogHandler
           filter:
             topics:
-              - Participate(address,uint256,bool,uint256,uint256[])
+              - Participate(address _sender,uint256 _id,bool _isMaker ,uint256 _points ,uint256[] _tokenIds)
+        - handler: handleFinishCampaign
+          kind: avalanche/LogHandler
+          filter:
+            topics:
+              - FinishCampaign(address,address,address,uint256,uint256,uint256)
+        - handler: handleUnlockAttackNFTs
+          kind: avalanche/LogHandler
+          filter:
+            topics:
+              - UnlockAttackNFTs(address,uint256)
+        - handler: handleReinforceAttack
+          kind: avalanche/LogHandler
+          filter:
+            topics:
+              - ReinforceAttack(address,uint256,uint256,uint256)
+        - handler: handleReinforceDefense
+          kind: avalanche/LogHandler
+          filter:
+            topics:
+              - ReinforceDefense(address,uint256,uint256,uint256)

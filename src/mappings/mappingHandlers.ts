@@ -1,253 +1,236 @@
-import { BigInt as BigIntGraph} from "@graphprotocol/graph-ts";
-import {
-  Expedition,
-  FinishCampaign,
-  OwnershipTransferred,
-  Participate,
-  Paused,
-  ReinforceAttack,
-  ReinforceDefense,
-  UnlockAttackNFTs,
-  Unpaused,
-} from "./utils";
+
 import { Campaign, Hero, HeroCampaign } from "../types";
 import {AvalancheLog} from "@subql/types-avalanche";
+import assert from "assert";
+import { Expedition, FinishCampaignEvent, ParticipateEvent, ReinforceAttackEvent, ReinforceDefenseEvent, UnlockAttackNFTsEvent } from "../contracts/Expedition";
+import { Expedition__factory } from "../contracts";
+import { BigNumber } from "ethers";
 
-export async function handleParticipate(avaxEvent: AvalancheLog): Promise<void> {
-  const event = avaxEvent.args;
-  // Connect to the Expedition contract
-  let expedition: Expedition = Expedition.bind(event.address);
+async function createHero(tokenId: BigNumber, expedition: Expedition): Promise<Hero> {
+  let hero = await Hero.get(tokenId.toHexString());
 
-  // Get tokens from event data
-  const tokens: BigIntGraph[] = event.params._tokenIds;
+  // If the hero doesn't exist create the details
+  if (!hero) {
+    const [level, attack, defense, endurance] = await Promise.all([
+      expedition.getNFTLevel(tokenId),
+      expedition.getNFTAttack(tokenId),
+      expedition.getNFTDefense(tokenId),
+      expedition.getNFTEndurance(tokenId),
+    ]);
 
-  // Load campaign record
-  let campaign = await Campaign.get(event.params._id.toString());
+    hero = Hero.create({
+      id: tokenId.toHexString(),
+      level: level.toBigInt(),
+      attack: attack.toBigInt(),
+      defense: defense.toBigInt(),
+      endurance: endurance.toBigInt(),
+    });
 
-  // If the campaign does not exist create it with the campaign id
-  if (!campaign) {
-    campaign = new Campaign(event.params._id.toString());
+    await hero.save();
   }
+
+  return hero;
+}
+
+export async function handleParticipate(event: AvalancheLog<ParticipateEvent['args']>): Promise<void> {
+
+  assert(event.args, 'No event args');
+
+  let campaign = await Campaign.get(event.args._id.toHexString());
+
+  if (!campaign) {
+    campaign = new Campaign(event.args._id.toHexString());
+  }
+
+  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
 
   let _reinforceTimestamps = campaign.reinforceTimestamps;
 
   // Get all the tokens
+  const tokens = event.args._tokenIds;
   for (let i = 0; i < tokens.length; i++) {
     const tokenId = tokens[i];
-    let hero = await Hero.get(tokenId.toString());
+    const hero = await createHero(tokenId, expedition);
 
-    // If the hero doesn't exist create the details
-    if (!hero) {
-      hero = new Hero(tokenId.toString());
+    const heroCampaign = HeroCampaign.create({
+      id: `${event.transactionHash}-${event.logIndex}-${tokenId.toHexString()}`,
+      heroId: hero.id,
+      campaignId: campaign.id,
+      // not maker
+      isAmbusher: !event.args._isMaker,
+    })
 
-      hero.level = BigInt(expedition.getNFTLevel(tokenId).toString());
-      hero.attack = BigInt(expedition.getNFTAttack(tokenId).toString());
-      hero.defense = BigInt(expedition.getNFTDefense(tokenId).toString());
-      hero.endurance = BigInt(expedition.getNFTEndurance(tokenId).toString());
-
-      hero.save();
-    }
-
-    // Create the heroCampaign record
-    let heroCampaign = new HeroCampaign(
-      event.transaction.hash.toHex() + "-" + event.logIndex.toString() + "-" + tokenId.toString()
-    );
-    heroCampaign.heroId = hero.id;
-    heroCampaign.campaignId = campaign.id;
-
-    // not maker
-    heroCampaign.isAmbusher = !event.params._isMaker;
-
-    heroCampaign.save();
+    await heroCampaign.save();
 
     // Set campaign timestamps for each token
-    _reinforceTimestamps.push(event.block.timestamp)
+    _reinforceTimestamps.push(event.block.timestamp);
   }
 
   // Note: In the time event fired tier & area have already values so it's safe to retrieve here
   // Get campaign details from blockchain
-  const campaignDetails = expedition.campaigns(event.params._id);
+  const campaignDetails = await expedition.campaigns(event.args._id);
 
   // Set tier and area info
-  campaign.tier = BigInt(campaignDetails.value1.toString());
-  campaign.area = BigInt(campaignDetails.value4.toString());
+  campaign.tier = campaignDetails.tier.toBigInt();
+  campaign.area = campaignDetails.area.toBigInt();
 
   // if isMaker assign the sender as campaigner
   // store the tokens of campaigner or ambusher
-  if (event.params._isMaker) {
-    campaign.campaigner = event.params._sender.toString();
+  if (event.args._isMaker) {
+    campaign.campaigner = event.args._sender;
     // set total defense
-    campaign.totalDefense = BigInt(event.params._points.toString());
+    campaign.totalDefense =event.args._points.toBigInt();
 
     // add timestamp
     campaign.startTimestamp = BigInt(event.block.timestamp.toString());
   } else {
-    campaign.ambusher = event.params._sender.toString();
+    campaign.ambusher = event.args._sender;
     // set total attack
-    campaign.totalAttack = BigInt(event.params._points.toString());
+    campaign.totalAttack = event.args._points.toBigInt();
   }
 
 
   campaign.reinforceTimestamps = _reinforceTimestamps;
-  campaign.save();
+  await campaign.save();
 }
 
-// export function handleFinishCampaign(event: FinishCampaign): void {
-//   // Connect to the Expedition contract
-//   let expedition: Expedition = Expedition.bind(event.address);
+export async function handleFinishCampaign(event: AvalancheLog<FinishCampaignEvent['args']>): Promise<void> {
+  // Connect to the Expedition contract
+  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
 
-//   const rewardMultiplier: BigInt = expedition.rewardMultiplier();
-//   const loserRewardMultiplier: BigInt = BigInt.fromU32(10000).minus(rewardMultiplier);
+  const rewardMultiplier = await expedition.rewardMultiplier();
+  const loserRewardMultiplier = BigNumber.from(10000).sub(rewardMultiplier);
 
-//   // Load campaign record
-//   let campaign = Campaign.load(event.params._id.toString());
+  // Load campaign record
+  let campaign = await Campaign.get(event.args._id.toHexString());
 
-//   // If the campaign does not exist create it with the campaign id
-//   if (!campaign) {
-//     campaign = new Campaign(event.params._id.toString());
-//   }
+  // If the campaign does not exist create it with the campaign id
+  if (!campaign) {
+    campaign = new Campaign(event.args._id.toHexString());
+  }
 
-//   // Caller is the maker
-//   // Set is claimed for the campaigner
-//   campaign.isClaimedCampaigner = true;
+  // Caller is the maker
+  // Set is claimed for the campaigner
+  campaign.isClaimedCampaigner = true;
 
-//   // campaigner is the winner
-//   if (event.params._winner === event.params._sender) {
-//     campaign.rewardHonCampaigner = event.params._honReward;
-//     campaign.rewardHrmCampaigner = event.params._hrmReward;
-//     campaign.rewardHonAmbusher = BigInt.zero();
-//     campaign.rewardHrmAmbusher = BigInt.zero();
-//   } else {
-//     // ambusher is the winner
-//     campaign.rewardHonCampaigner = event.params._honReward
-//       .times(loserRewardMultiplier)
-//       .div(BigInt.fromU32(10000));
-//     campaign.rewardHrmCampaigner = event.params._hrmReward
-//       .times(loserRewardMultiplier)
-//       .div(BigInt.fromU32(10000));
-//     campaign.rewardHonAmbusher = event.params._honReward
-//       .times(rewardMultiplier)
-//       .div(BigInt.fromU32(10000));
-//     campaign.rewardHrmAmbusher = event.params._hrmReward
-//       .times(rewardMultiplier)
-//       .div(BigInt.fromU32(10000));
-//   }
+  // campaigner is the winner
+  if (event.args._winner === event.args._sender) {
+    campaign.rewardHonCampaigner = event.args._honReward.toBigInt();
+    campaign.rewardHrmCampaigner = event.args._hrmReward.toBigInt();
+    campaign.rewardHonAmbusher = BigInt(0);
+    campaign.rewardHrmAmbusher = BigInt(0);
+  } else {
+    // ambusher is the winner
+    campaign.rewardHonCampaigner = event.args._honReward
+      .mul(loserRewardMultiplier)
+      .div(BigNumber.from(10000))
+      .toBigInt();
+    campaign.rewardHrmCampaigner = event.args._hrmReward
+      .mul(loserRewardMultiplier)
+      .div(BigNumber.from(10000))
+      .toBigInt();
+    campaign.rewardHonAmbusher = event.args._honReward
+      .mul(rewardMultiplier)
+      .div(BigNumber.from(10000))
+      .toBigInt();
+    campaign.rewardHrmAmbusher = event.args._hrmReward
+      .mul(rewardMultiplier)
+      .div(BigNumber.from(10000))
+      .toBigInt();
+  }
 
-//   campaign.save();
-// }
+  await campaign.save();
+}
 
-// export async function handleUnlockAttackNFTs(event: UnlockAttackNFTs): Promise<void> {
-//   // Load campaign record
-//   let campaign = await Campaign.get(event.params._id.toString());
+export async function handleUnlockAttackNFTs(event: AvalancheLog<UnlockAttackNFTsEvent['args']>): Promise<void> {
+  // Load campaign record
+  let campaign = await Campaign.get(event.args._id.toHexString());
 
-//   // If the campaign does not exist create it with the campaign id
-//   if (!campaign) {
-//     campaign = new Campaign(event.params._id.toString());
-//   }
+  // If the campaign does not exist create it with the campaign id
+  if (!campaign) {
+    // This will cause issues as there is missing required params
+    campaign = new Campaign(event.args._id.toHexString());
+  }
 
-//   // Set is claimed for the ambusher
-//   campaign.isClaimedAmbusher = true;
+  // Set is claimed for the ambusher
+  campaign.isClaimedAmbusher = true;
 
-//   campaign.save();
-// }
+  await campaign.save();
+}
 
-// export async function handleReinforceAttack(event: ReinforceAttack): Promise<void> {
-//   // Connect to the Expedition contract
-//   let expedition: Expedition = Expedition.bind(event.address);
+export async function handleReinforceAttack(event: AvalancheLog<ReinforceAttackEvent['args']>): Promise<void> {
+  // Connect to the Expedition contract
+  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
 
-//   // Load campaign record
-//   let campaign = await Campaign.get(event.params._id.toString());
+  // Load campaign record
+  let campaign = await Campaign.get(event.args._id.toHexString());
 
-//   // If the campaign does not exist create it with the campaign id
-//   if (!campaign) {
-//     campaign = new Campaign(event.params._id.toString());
-//   }
+  // If the campaign does not exist create it with the campaign id
+  if (!campaign) {
+    campaign = new Campaign(event.args._id.toHexString());
+  }
 
-//   let hero = await Hero.get(event.params._tokenId.toString());
+  const tokenId = event.args._tokenId;
+  const hero = await createHero(tokenId, expedition);
 
-//   // If hero does not exist create it
-//   if (!hero) {
-//     hero = new Hero(event.params._tokenId.toString());
+  // set the total attack points
+  campaign.totalAttack = event.args._points.toBigInt();
 
-//     hero.level = expedition.getNFTLevel(event.params._tokenId);
-//     hero.attack = expedition.getNFTAttack(event.params._tokenId);
-//     hero.defense = expedition.getNFTDefense(event.params._tokenId);
-//     hero.endurance = expedition.getNFTEndurance(event.params._tokenId);
+  // Set campaign reinforcement timestamp
+  let _reinforceTimestamps = campaign.reinforceTimestamps;
+  _reinforceTimestamps.push(event.block.timestamp);
 
-//     hero.save();
-//   }
+  // Create the heroCampaign record
+  const heroCampaign = HeroCampaign.create({
+    id: `${event.transactionHash}-${event.logIndex}`,
+    heroId: hero.id,
+    campaignId: campaign.id,
+    // ambusher only calls reinforceAttack
+    isAmbusher: true,
+  })
 
-//   // set the total attack points
-//   campaign.totalAttack = event.params._points;
+  await heroCampaign.save();
 
-//   // Set campaign reinforcement timestamp
-//   let _reinforceTimestamps = campaign.reinforceTimestamps;
-//   _reinforceTimestamps.push(event.block.timestamp);
+  campaign.reinforceTimestamps = _reinforceTimestamps;
+  await campaign.save();
+}
 
-//   // Create the heroCampaign record
-//   let heroCampaign = new HeroCampaign(
-//     event.transaction.hash.toHex() + "-" + event.logIndex.toString()
-//   );
-//   heroCampaign.heroId = hero.id;
-//   heroCampaign.campaignId = campaign.id;
+export async function handleReinforceDefense(event: AvalancheLog<ReinforceDefenseEvent['args']>): Promise<void> {
+  // Connect to the Expedition contract
+  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
 
-//   // ambusher only calls reinforceAttack
-//   heroCampaign.isAmbusher = true;
+  // Load campaign record
+  let campaign = await Campaign.get(event.args._id.toHexString());
 
-//   heroCampaign.save();
+  // If the campaign does not exist create it with the campaign id
+  if (!campaign) {
+    campaign = new Campaign(event.args._id.toHexString());
+  }
 
-//   campaign.reinforceTimestamps = _reinforceTimestamps;
-//   campaign.save();
-// }
+  const tokenId = event.args._tokenId;
+  const hero = await createHero(tokenId, expedition);
 
-// export async function handleReinforceDefense(event: ReinforceDefense): Promise<void> {
-//   // Connect to the Expedition contract
-//   let expedition: Expedition = Expedition.bind(event.address);
+  // set the total defense points
+  campaign.totalDefense = event.args._points.toBigInt();
 
-//   // Load campaign record
-//   let campaign = await Campaign.get(event.params._id.toString());
+  // Set campaign reinforcement timestamp
+  let _reinforceTimestamps = campaign.reinforceTimestamps;
+  _reinforceTimestamps.push(event.block.timestamp);
 
-//   // If the campaign does not exist create it with the campaign id
-//   if (!campaign) {
-//     campaign = new Campaign(event.params._id.toString());
-//   }
+  // Create the heroCampaign record
+  const heroCampaign = HeroCampaign.create({
+    id: `${event.transactionHash}-${event.logIndex}`,
+    heroId: hero.id,
+    campaignId: campaign.id,
+    // campaigner only calls reinforceDefense
+    isAmbusher: false,
+  })
 
-//   let hero = await Hero.get(event.params._tokenId.toString());
+  await heroCampaign.save();
 
-//   // If hero does not exist create it
-//   if (!hero) {
-//     hero = new Hero(event.params._tokenId.toString());
-
-//     hero.level = expedition.getNFTLevel(event.params._tokenId);
-//     hero.attack = expedition.getNFTAttack(event.params._tokenId);
-//     hero.defense = expedition.getNFTDefense(event.params._tokenId);
-//     hero.endurance = expedition.getNFTEndurance(event.params._tokenId);
-
-//     hero.save();
-//   }
-
-//   // set the total defense points
-//   campaign.totalDefense = event.params._points;
-
-//   // Set campaign reinforcement timestamp
-//   let _reinforceTimestamps = campaign.reinforceTimestamps;
-//   _reinforceTimestamps.push(event.block.timestamp);
-
-//   // Create the heroCampaign record
-//   let heroCampaign = new HeroCampaign(
-//     event.transaction.hash.toHex() + "-" + event.logIndex.toString()
-//   );
-//   heroCampaign.heroId = hero.id;
-//   heroCampaign.campaignId = campaign.id;
-
-//   // campaigner only calls reinforceDefense
-//   heroCampaign.isAmbusher = false;
-
-//   heroCampaign.save();
-
-//   campaign.reinforceTimestamps = _reinforceTimestamps;
-//   campaign.save();
-// }
+  campaign.reinforceTimestamps = _reinforceTimestamps;
+  campaign.save();
+}
 
 // export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
 

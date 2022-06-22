@@ -8,7 +8,8 @@
     "prepack": "rm -rf dist && npm build",
     "test": "jest",
     "codegen": "./node_modules/.bin/subql codegen",
-    "start:docker": "docker-compose pull && docker-compose up --remove-orphans"
+    "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
+    "codegen:contracts": "typechain --target=ethers-v5 --out-dir src/contracts abis/*.json"
   },
   "homepage": "https://github.com/subquery/avalanche-subql-starter",
   "repository": "github:subquery/avalanche-subql-starter",
@@ -20,19 +21,18 @@
   "author": "SubQuery Team",
   "license": "MIT",
   "dependencies": {
-    "@pangolindex/exchange-contracts": "^1.0.2",
     "@polkadot/api": "^8",
     "@subql/common": "latest",
     "@subql/validator": "latest",
-    "assert": "^2.0.0"
+    "assert": "^2.0.0",
+    "ethers": "^5.6.9"
   },
   "devDependencies": {
     "@subql/cli": "latest",
-    "@subql/types": "latest",
     "@subql/types-avalanche": "dev",
-    "@graphprotocol/graph-cli": "^0.20.0",
+    "@typechain/ethers-v5": "^10.1.0",
     "mustache": "^4.1.0",
-    "@graphprotocol/graph-ts": "^0.20.0",
+    "typechain": "^8.1.0",
     "typescript": "4.5.5"
   }
 }
