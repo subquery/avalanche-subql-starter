@@ -7,7 +7,7 @@
     "build": "tsc -b",
     "prepack": "rm -rf dist && npm build",
     "test": "jest",
-    "codegen": "./node_modules/.bin/subql codegen",
+    "codegen": "./node_modules/.bin/subql codegen && yarn codegen:contracts",
     "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
     "codegen:contracts": "typechain --target=ethers-v5 --out-dir src/contracts abis/*.json"
   },
