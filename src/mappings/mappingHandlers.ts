@@ -42,7 +42,7 @@ export async function handleParticipate(event: AvalancheLog<ParticipateEvent['ar
     campaign = new Campaign(event.args._id.toHexString());
   }
 
-  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
+  const expedition = Expedition__factory.connect(event.address, api);
 
   let _reinforceTimestamps = campaign.reinforceTimestamps;
 
@@ -96,7 +96,7 @@ export async function handleParticipate(event: AvalancheLog<ParticipateEvent['ar
 
 export async function handleFinishCampaign(event: AvalancheLog<FinishCampaignEvent['args']>): Promise<void> {
   // Connect to the Expedition contract
-  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
+  const expedition = Expedition__factory.connect(event.address, api);
 
   const rewardMultiplier = await expedition.rewardMultiplier();
   const loserRewardMultiplier = BigNumber.from(10000).sub(rewardMultiplier);
@@ -160,7 +160,7 @@ export async function handleUnlockAttackNFTs(event: AvalancheLog<UnlockAttackNFT
 
 export async function handleReinforceAttack(event: AvalancheLog<ReinforceAttackEvent['args']>): Promise<void> {
   // Connect to the Expedition contract
-  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
+  const expedition = Expedition__factory.connect(event.address, api);
 
   // Load campaign record
   let campaign = await Campaign.get(event.args._id.toHexString());
@@ -197,7 +197,7 @@ export async function handleReinforceAttack(event: AvalancheLog<ReinforceAttackE
 
 export async function handleReinforceDefense(event: AvalancheLog<ReinforceDefenseEvent['args']>): Promise<void> {
   // Connect to the Expedition contract
-  const expedition = Expedition__factory.connect(event.address, /* TODO need a provider injeccted globally */);
+  const expedition = Expedition__factory.connect(event.address, api);
 
   // Load campaign record
   let campaign = await Campaign.get(event.args._id.toHexString());
