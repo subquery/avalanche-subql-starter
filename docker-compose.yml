@@ -16,7 +16,7 @@ services:
       retries: 5
 
   node_qme3w3xsaopxucs:
-    image: onfinality/subql-node-avalanche:v0.1.1
+    image: onfinality/subql-node-avalanche:v0.2.0
     container_name: node_qme3w3xsaopxucs
     restart: always
     environment:
@@ -28,12 +28,15 @@ services:
     volumes:
       - ./:/app
     command:
-      - -f=ipfs://Qme3w3xSaopXuCsXPxHgJ3ynBDctT9DC7VtLiAxsgF35KV
+      - -f=ipfs://QmbDL87AEyQdxoQpvJkvRPNV6MwNX6xngKmq6pWcAJAS4e
       - -d=https://api.subquery.network/sq/subquery/avalanche-dictionary
       - --ipfs=https://ipfs.subquery.network/ipfs/api/v0
-      - --db-schema=app_Qme3w3xSaopXuCsXPxHgJ3ynBDctT9DC7VtLiAxsgF35KV
+      - --db-schema=app_QmbDL87AEyQdxoQpvJkvRPNV6MwNX6xngKmq6pWcAJAS4e
       - --network-endpoint=http://avalanche.api.onfinality.io:9650
       - --port=3002
+      - --proof-of-index=false
+      - -m=/var/tmp/composeFiles/Qma3iHivTUPAQLiC9zzXmYZ99uziZLmT85C6dvVPQEFVy8/.mmr
+      - --disable-historical=true
     healthcheck:
       test:
         [
@@ -62,7 +65,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
     command:
-      - --name=app_Qme3w3xSaopXuCsXPxHgJ3ynBDctT9DC7VtLiAxsgF35KV
+      - --name=app_QmbDL87AEyQdxoQpvJkvRPNV6MwNX6xngKmq6pWcAJAS4e
       - --playground
       - --indexer=http://node_qme3w3xsaopxucs:3002
       - --port=3002

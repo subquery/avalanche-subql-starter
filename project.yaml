@@ -5,10 +5,10 @@ version: "0.0.1"
 runner:
   node:
     name: "@subql/node-avalanche"
-    version: "*"
+    version: ">=0.1.1"
   query:
     name: "@subql/query"
-    version: "*"
+    version: ">=1.2.0"
 description: "This project can be use as a starting point for developing your new Avalanche SubQuery project"
 repository: "https://github.com/subquery/avalanche-subql-starter"
 

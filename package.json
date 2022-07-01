@@ -31,5 +31,8 @@
     "@subql/types": "latest",
     "@subql/types-avalanche": "dev",
     "typescript": "4.5.5"
+  },
+  "resolutions": {
+    "@polkadot/util": "8.7.1"
   }
 }
