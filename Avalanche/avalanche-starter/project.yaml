@@ -16,6 +16,7 @@ schema:
   file: "./schema.graphql"
 
 network:
+  #  This endpoint might not be publicly available
   endpoint: "https://avalanche.api.onfinality.io/public"
   # endpoint: "https://avalanche.api.onfinality.io"
   # endpoint:  https://api.avax-test.network
