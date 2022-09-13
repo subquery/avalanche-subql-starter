@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   AvalancheBlockEntity,
-
   AvalancheLogEntity,
   AvalancheTransactionEntity,
   AvalancheReceiptEntity,
@@ -13,6 +12,7 @@ import {
   AvalancheLog,
 } from "@subql/types-avalanche";
 
+/* Commented out for performance
 export async function handleBlock(block: AvalancheBlock): Promise<void> {
   const blockRecord = new AvalancheBlockEntity(block.hash);
   blockRecord.baseFeePerGas = block.baseFeePerGas;
@@ -41,10 +41,24 @@ export async function handleBlock(block: AvalancheBlock): Promise<void> {
 
   await blockRecord.save();
 }
+*/
+
+async function checkBlockExists(blockHash: string, blockNumber: number) {
+  let blockEntity = await AvalancheBlockEntity.get(blockHash);
+  if (!blockEntity) {
+    blockEntity = new AvalancheBlockEntity(blockHash);
+    blockEntity.hash = blockHash;
+    blockEntity.number = blockNumber;
+    await blockEntity.save();
+  }
+}
 
 export async function handleTransaction(
   transaction: AvalancheTransaction
 ): Promise<void> {
+  logger.info("Transaction");
+  await checkBlockExists(transaction.blockHash, transaction.blockNumber);
+
   const transactionRecord = new AvalancheTransactionEntity(
     `${transaction.blockHash}-${transaction.hash}`
   );
@@ -72,9 +86,10 @@ export async function handleTransaction(
 }
 
 export async function handleLog(log: AvalancheLog): Promise<void> {
-  const logRecord = new AvalancheLogEntity(
-    `${log.blockHash}-${log.logIndex}`
-  );
+  logger.info("log");
+  await checkBlockExists(log.blockHash, log.blockNumber);
+
+  const logRecord = new AvalancheLogEntity(`${log.blockHash}-${log.logIndex}`);
   logRecord.blockId = log.blockHash;
   logRecord.address = log.address;
   logRecord.blockHash = log.blockHash;
@@ -88,9 +103,14 @@ export async function handleLog(log: AvalancheLog): Promise<void> {
   await logRecord.save();
 }
 
-export async function handleReceipt(transaction: AvalancheTransaction): Promise<void> {
+/* Commented out for performance
+export async function handleReceipt(
+  transaction: AvalancheTransaction
+): Promise<void> {
   const receipt = transaction.receipt;
-  const receiptRecord = new AvalancheReceiptEntity(`${receipt.blockHash}-${receipt.transactionHash}`);
+  const receiptRecord = new AvalancheReceiptEntity(
+    `${receipt.blockHash}-${receipt.transactionHash}`
+  );
   receiptRecord.blockId = receipt.blockHash;
   receiptRecord.blockHash = receipt.blockHash;
   receiptRecord.blockNumber = receipt.blockNumber;
@@ -107,3 +127,4 @@ export async function handleReceipt(transaction: AvalancheTransaction): Promise<
   receiptRecord.type = receipt.type;
   await receiptRecord.save();
 }
+*/

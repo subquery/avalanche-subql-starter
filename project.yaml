@@ -28,7 +28,7 @@ network:
   dictionary: https://api.subquery.network/sq/subquery/avalanche-dictionary
 dataSources:
   - kind: avalanche/Runtime
-    startBlock: 1
+    startBlock: 57360 # Contract creation of Pangolin Token https://snowtrace.io/tx/0xfab84552e997848a43f05e440998617d641788d355e3195b6882e9006996d8f9
     options:
       # Must be a key of assets
       abi: erc20
@@ -48,7 +48,7 @@ dataSources:
             ## The function can either be the function fragment or signature
             # function: '0x095ea7b3'
             # function: '0x7ff36ab500000000000000000000000000000000000000000000000000000000'
-            function: approve(address spender, uint256 rawAmount)
+            function: deposit(uint256 amount)
             # from: "0x60781C2586D68229fde47564546784ab3fACA982"
             # to: "0x60781C2586D68229fde47564546784ab3fACA982"
         # - handler: handleReceipt
