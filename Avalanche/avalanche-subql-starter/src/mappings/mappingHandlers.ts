@@ -86,7 +86,7 @@ export async function handleTransaction(
 }
 
 export async function handleLog(log: AvalancheLog): Promise<void> {
-  logger.info("log");
+  // logger.info("log");
   await checkBlockExists(log.blockHash, log.blockNumber);
 
   const logRecord = new AvalancheLogEntity(`${log.blockHash}-${log.logIndex}`);
