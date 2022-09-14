@@ -28,8 +28,7 @@ network:
   dictionary: https://api.subquery.network/sq/subquery/avalanche-dictionary
 dataSources:
   - kind: avalanche/Runtime
-    startBlock: 1
-#    startBlock: 57360 # Contract creation of Pangolin Token https://snowtrace.io/tx/0xfab84552e997848a43f05e440998617d641788d355e3195b6882e9006996d8f9
+    startBlock: 57360 # Contract creation of Pangolin Token https://snowtrace.io/tx/0xfab84552e997848a43f05e440998617d641788d355e3195b6882e9006996d8f9
     options:
       # Must be a key of assets
       abi: erc20
