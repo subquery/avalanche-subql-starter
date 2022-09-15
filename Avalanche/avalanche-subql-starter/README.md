@@ -93,14 +93,13 @@ For the `subql-starter` project, you can try to query with the following code to
 
 ```graphql
 query {
-  avalancheTransactionEntities(first: 5) {
-    nodes {
-      id
-    }
-  }
   avalancheLogEntities(first: 5) {
     nodes {
       id
+      blockId
+      address
+      topics
+      transactionHash
     }
   }
 }
